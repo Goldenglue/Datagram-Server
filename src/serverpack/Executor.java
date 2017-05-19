@@ -101,7 +101,7 @@ public class Executor {
     //i didn't really know what type incoming objects should be so i choose Object...
     private void receiveSerializedObject() {
         /*Gson gson = new Gson();
-        String string = Connection.receivePacket();
+        String string = Connection.receivePacketOfDataSize();
         JsonParser jsonParser = new JsonParser();
         JsonArray jsonArray = jsonParser.parse(string).getAsJsonArray();
         Type heh = new TypeToken<Object>() {}.getType();

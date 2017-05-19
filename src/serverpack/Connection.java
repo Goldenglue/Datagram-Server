@@ -13,32 +13,34 @@ import java.nio.ByteBuffer;
 class Connection {
     private static DatagramSocket socketInput;
     private static DatagramSocket socketOutput;
-    private static DatagramPacket packetThatContainsSizeOfNextPacket;
-    private static DatagramPacket packetThatContainsMessageItself;
+    private static DatagramPacket packetOfDataSize;
+    private static DatagramPacket packetOfData;
+    private static InetAddress address;
     ByteArrayOutputStream byteArrayOutputStream;
-    private int inputPortNumber = 4020;
-    private int outputPortNumber = 4021;
+    private static int inputPortNumber = 4020;
+    private static int outputPortNumber = 4021;
     private boolean isConnected = false;
     private Executor executor;
     private Thread runConnectionThread;
-    private byte[] bufferForIncomingMessageSize = new byte[4];
-    //private byte[] bufferForIncomingMessage;
+    private static byte[] bufferForDataSize = new byte[4];
+    private static byte[] bufferForData;
 
     private Runnable runConnection = () -> {
         while (true) {
             while (isConnected) {
-                try {
-                    socketInput.receive(packetThatContainsSizeOfNextPacket);
-                    //packetThatContainsMessageItself = new DatagramPacket(bufferForIncomingMessage = new byte[getSizeOfNextPacket(),])
-                    String clientCommandMessage = new String(packetThatContainsSizeOfNextPacket.getData());
-                    System.out.println(clientCommandMessage);
-                    executor.executeMessageFromClient(clientCommandMessage);
+                System.out.println("trying to receive");
+                int size = receivePacketOfDataSize();
+                System.out.println(size);
+                String receivedData = receivePacketOfData(size);
+                System.out.println(receivedData);
 
-                    String serverCommandMessage = setMessage();
-                    executor.executeMessageFromClient(serverCommandMessage);
-                } catch (IOException e) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                /*String serverCommandMessage = setMessage();
+                executor.executeMessageFromClient(serverCommandMessage);*/
             }
         }
     };
@@ -47,40 +49,63 @@ class Connection {
         executor = new Executor(this);
 
         try {
-            InetAddress address = InetAddress.getByName("localhost");
+            address = InetAddress.getByName("localhost");
             socketInput = new DatagramSocket(inputPortNumber, address);
-            socketOutput = new DatagramSocket(outputPortNumber, address);
-            packetThatContainsSizeOfNextPacket = new DatagramPacket(bufferForIncomingMessageSize, 4);
+            socketOutput = new DatagramSocket();
+            isConnected = true;
         } catch (SocketException | UnknownHostException e) {
             e.printStackTrace();
         }
+        sendPacketOfDataSize("privet s servera!");
+        sendPacketOfData("privet s servera!");
+
         runConnectionThread = new Thread(runConnection);
         runConnectionThread.start();
+    }
+
+    static void sendPacketOfDataSize(String data) {
+        int size = data.length();
+        bufferForDataSize = ByteBuffer.allocate(4).putInt(size).array();
+        packetOfDataSize = new DatagramPacket(bufferForDataSize, bufferForDataSize.length, address, outputPortNumber);
+        try {
+            socketOutput.send(packetOfDataSize);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static void sendPacketOfData(String data) {
+        bufferForData = data.getBytes();
+        packetOfData = new DatagramPacket(bufferForData, bufferForData.length, address, outputPortNumber);
+        try {
+            socketOutput.send(packetOfData);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static int receivePacketOfDataSize() {
+        packetOfDataSize = new DatagramPacket(bufferForDataSize, bufferForDataSize.length);
+        try {
+            socketInput.receive(packetOfDataSize);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return ByteBuffer.wrap(packetOfDataSize.getData()).getInt();
+    }
+
+    static String receivePacketOfData(int size) {
+        bufferForData = new byte[size];
+        packetOfData = new DatagramPacket(bufferForData, bufferForData.length);
+        try {
+            socketInput.receive(packetOfData);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new String(packetOfData.getData());
     }
 
     private String setMessage() {
         return ServerUI.getMessageToClient();
     }
-
-    static void sendPacket() {
-        try {
-            socketOutput.send(packetThatContainsSizeOfNextPacket);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    static String receivePacket() {
-        try {
-            socketInput.receive(packetThatContainsSizeOfNextPacket);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return new String(packetThatContainsSizeOfNextPacket.getData());
-    }
-
-    private int getSizeOfNextPacket() {
-        return ByteBuffer.wrap(packetThatContainsSizeOfNextPacket.getData()).getInt();
-    }
-
 }
