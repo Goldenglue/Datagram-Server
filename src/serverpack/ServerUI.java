@@ -30,15 +30,9 @@ public class ServerUI extends JFrame {
         jTextField = new JTextField(10);
         jTextField.addActionListener(actionEvent -> {
             messageToClient = jTextField.getText();
+            Connection.processCommand(messageToClient);
             jTextField.setText("");
         });
         jPanel.add(jTextField);
     }
-
-    static String getMessageToClient() {
-        String temp = messageToClient;
-        messageToClient = "";
-        return temp;
-    }
-
 }

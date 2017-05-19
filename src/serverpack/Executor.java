@@ -5,7 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +18,6 @@ import java.util.Vector;
 public class Executor {
     private Map<String, Call> stringMethodMap;
     private String[] possibleCommands;
-    private Connection connection;
     private String message;
     private Vector<Object> someVector = new Vector<>();
 
@@ -39,8 +37,7 @@ public class Executor {
             this::getObject
     };
 
-    Executor(Connection conn) {
-        this.connection = conn;
+    Executor() {
         try {
             setStringMethodMap();
         } catch (NoSuchMethodException e) {
@@ -88,63 +85,54 @@ public class Executor {
         }
     }
 
-
     private void sendSerializedObject() {
-        /*connection.toClient.println("-sobjs");
-        connection.toClient.flush();
+        Connection.sendPacketOfData("-sobjs");
         Gson gson = new Gson();
         String temp = gson.toJson(someVector);
-        connection.toClient.println(temp);
-        connection.toClient.flush();*/
+        Connection.sendPacketOfData(temp);
     }
 
     //i didn't really know what type incoming objects should be so i choose Object...
     private void receiveSerializedObject() {
-        /*Gson gson = new Gson();
-        String string = Connection.receivePacketOfDataSize();
+        Gson gson = new Gson();
+        String string = Connection.receivePacketOfData();
         JsonParser jsonParser = new JsonParser();
+        System.out.println(string + " hehehehehe");
         JsonArray jsonArray = jsonParser.parse(string).getAsJsonArray();
-        Type heh = new TypeToken<Object>() {}.getType();
+        Type heh = new TypeToken<Object>() {
+        }.getType();
         for (int i = 0; i < jsonArray.size(); i++) {
-            System.out.println(jsonArray);
-            someVector.add(gson.fromJson(string, heh));
-        }*/
+            System.out.println(jsonArray.get(i));
+            someVector.add(gson.fromJson(jsonArray.get(i), heh));
+        }
     }
 
     private void clearVectorOnServer() {
-        /*someVector.removeAllElements();
-        System.out.println("Vector cleared");*/
+        someVector.removeAllElements();
+        System.out.println("Vector cleared");
     }
 
     private void clearVectorOnClient() {
-        /*connection.toClient.println(message);
-        connection.toClient.flush();*/
+        Connection.sendPacketOfData(message);
     }
 
     private void sizeOnServer() {
-        /*connection.toClient.println(someVector.size());
-        connection.toClient.flush();*/
+        Connection.sendPacketOfData(String.valueOf(someVector.size()));
     }
 
     private void sizeOnClient() {
-        /*connection.toClient.println(message);
-        connection.toClient.flush();
-        try {
-            System.out.println("size on client: " + connection.fromClient.readLine());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
+        Connection.sendPacketOfData(message);
+        System.out.println("size on client: " + Connection.receivePacketOfData());
     }
 
     private void requestObject() {
-        /*connection.toClient.println(message);
-        connection.toClient.flush();*/
+        Connection.sendPacketOfData(message);
     }
 
     //type is used to give idea of what type object is going to be so client knows what constructor to use
     // in this situation. might as well get a better checking procedure.
     private void sendObject() {
-        /*Gson gson = new Gson();
+        Gson gson = new Gson();
         message = message.replaceAll("[^0-9]", "");
         String object = gson.toJson(someVector.get(Integer.valueOf(message)));
         String type;
@@ -153,27 +141,22 @@ public class Executor {
         } else {
             type = "Strings";
         }
-        connection.toClient.println("-robj");
-        connection.toClient.flush();
+        Connection.sendPacketOfData("-robj");
         System.out.println(type);
-        connection.toClient.println(type);
-        connection.toClient.flush();
+        Connection.sendPacketOfData(type);
         System.out.println(object);
-        connection.toClient.println(object);
-        connection.toClient.flush();
-        Connection.sendPacket();*/
+        Connection.sendPacketOfData(object);
+
     }
 
     private void getObject() {
-        /*Gson gson = new Gson();
-        try {
-            String object = connection.fromClient.readLine();
-            System.out.println(object);
-            Type heh = new TypeToken<Object>() {
-            }.getType();
-            someVector.add(gson.fromJson(object, heh));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
+        Gson gson = new Gson();
+
+        String object = Connection.receivePacketOfData();
+        System.out.println(object);
+        Type heh = new TypeToken<Object>() {
+        }.getType();
+        someVector.add(gson.fromJson(object, heh));
+
     }
 }
