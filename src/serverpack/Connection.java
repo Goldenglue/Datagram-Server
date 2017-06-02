@@ -13,7 +13,6 @@ import java.nio.ByteBuffer;
 class Connection {
     private static DatagramSocket socketInput;
     private static DatagramSocket socketOutput;
-    private static DatagramPacket packetOfDataSize;
     private static DatagramPacket packetOfData;
     private static InetAddress address;
     ByteArrayOutputStream byteArrayOutputStream;
@@ -22,14 +21,14 @@ class Connection {
     private boolean isConnected = false;
     private static Executor executor;
     private Thread runConnectionThread;
-    private static byte[] bufferForDataSize = new byte[4];
-    private static byte[] bufferForData;
+    private static byte[] bufferForData = new byte[256];
 
     private Runnable runConnection = () -> {
         while (true) {
             while (isConnected) {
-                String receivedData = receivePacketOfData();
-                System.out.println("received message: " + receivedData);
+                String receivedData[] = receivePacketOfData();
+                System.out.println("YES SOMETHING HAPPEND");
+                System.out.println("received message: " + receivedData[1]);
                 executor.executeMessageFromClient(receivedData);
                 try {
                     Thread.sleep(10);
@@ -57,19 +56,8 @@ class Connection {
         runConnectionThread.start();
     }
 
-    private static void sendPacketOfDataSize(String data) {
-        int size = data.length();
-        bufferForDataSize = ByteBuffer.allocate(4).putInt(size).array();
-        packetOfDataSize = new DatagramPacket(bufferForDataSize, bufferForDataSize.length, address, outputPortNumber);
-        try {
-            socketOutput.send(packetOfDataSize);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     static void sendPacketOfData(String data) {
-        sendPacketOfDataSize(data);
         System.out.println("sending: " + data);
         bufferForData = data.getBytes();
         packetOfData = new DatagramPacket(bufferForData, bufferForData.length, address, outputPortNumber);
@@ -80,26 +68,36 @@ class Connection {
         }
     }
 
-    private static int receivePacketOfDataSize() {
-        packetOfDataSize = new DatagramPacket(bufferForDataSize, bufferForDataSize.length);
-        try {
-            socketInput.receive(packetOfDataSize);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return ByteBuffer.wrap(packetOfDataSize.getData()).getInt();
-    }
-
-    static String receivePacketOfData() {
-        int size = receivePacketOfDataSize();
-        bufferForData = new byte[size];
+    private static String[] receivePacketOfData() {
         packetOfData = new DatagramPacket(bufferForData, bufferForData.length);
+        String[] everythingThatIsNeeded = new String[2];
+        String whateverCame = null;
+        String command = null;
+        StringBuilder builder = new StringBuilder();
         try {
             socketInput.receive(packetOfData);
+            command = new String(packetOfData.getData());
+            System.out.println("command is " + command);
+            while (true) {
+                bufferForData =  new byte[256];
+                packetOfData = new DatagramPacket(bufferForData, bufferForData.length);
+                socketInput.receive(packetOfData);
+                String receivedData = new String(packetOfData.getData());
+                System.out.println("received " + receivedData);
+                if (receivedData.equalsIgnoreCase("end")) {
+                    System.out.println("ending");
+                    break;
+                } else {
+                    builder.append(receivedData);
+                }
+            }
+            whateverCame = builder.toString();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return new String(packetOfData.getData());
+        everythingThatIsNeeded[0] = command;
+        everythingThatIsNeeded[1] = whateverCame;
+        return everythingThatIsNeeded;
     }
 
     static void processCommand(String serverCommand) {

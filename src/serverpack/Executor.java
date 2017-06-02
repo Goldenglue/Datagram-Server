@@ -16,24 +16,31 @@ import java.util.Vector;
  * Created by IvanOP on 04.05.2017.
  */
 public class Executor {
-    private Map<String, Call> stringMethodMap;
-    private String[] possibleCommands;
+    private Map<String, NoParameterMethods> stringNoParameterMethodMap;
+    private Map<String, ParameterMethod> stringParameterMethodMap;
     private String message;
     private Vector<Object> someVector = new Vector<>();
 
-    interface Call {
+    interface NoParameterMethods {
         void execute();
     }
 
-    private Call[] calls = new Call[]{
-            this::receiveSerializedObject,
+    private NoParameterMethods[] noParameterMethods = new NoParameterMethods[]{
             this::sendSerializedObject,
             this::clearVectorOnServer,
             this::clearVectorOnClient,
             this::sizeOnServer,
-            this::sizeOnClient,
             this::requestObject,
-            this::sendObject,
+            this::sendObject
+    };
+
+    interface ParameterMethod {
+        void execute(String something);
+    }
+
+    private ParameterMethod[] parameterMethods = new ParameterMethod[]{
+            this::receiveSerializedObject,
+            this::sizeOnClient,
             this::getObject
     };
 
@@ -65,22 +72,36 @@ public class Executor {
      * @throws NoSuchMethodException
      */
     private void setStringMethodMap() throws NoSuchMethodException {
-        possibleCommands = new String[]{"-sobjc", "-sobjs", "-clrc", "-clrs", "-vecsc", "-vecss", "-gobjs"
-                , "-gobjc", "-robj"};
-        stringMethodMap = new HashMap<>();
-        for (int i = 0; i < possibleCommands.length; i++) {
-            stringMethodMap.put(possibleCommands[i], calls[i]);
+        String[] possibleNoParameterCommands = new String[]{"-sobjc", "-clrvc", "-vecss", "-gobjc"
+                , "-gobjs"};
+        String[] possibleParameterCommands = new String[]{"-sobjs", "-vecsc", "-rcobj"};
+        stringNoParameterMethodMap = new HashMap<>();
+        for (int i = 0; i < possibleNoParameterCommands.length; i++) {
+            stringNoParameterMethodMap.put(possibleNoParameterCommands[i], noParameterMethods[i]);
+        }
+
+        stringParameterMethodMap = new HashMap<>();
+        for (int i = 0; i < possibleParameterCommands.length; i++) {
+            stringParameterMethodMap.put(possibleParameterCommands[i], parameterMethods[i]);
         }
     }
 
     void executeMessageFromClient(String message) {
         this.message = message;
         message = message.replaceAll("\\d", "");
-        if (stringMethodMap.containsKey(message)) {
-            for (Map.Entry<String, Call> temp : stringMethodMap.entrySet()) {
-                if (temp.getKey().equals(message)) {
-                    temp.getValue().execute();
-                }
+        for (Map.Entry<String, NoParameterMethods> temp : stringNoParameterMethodMap.entrySet()) {
+            if (temp.getKey().equals(message)) {
+                temp.getValue().execute();
+            }
+        }
+    }
+
+    void executeMessageFromClient(String[] message) {
+        this.message = message[0];
+        message[0] = message[0].replaceAll("\\d", "");
+        for (Map.Entry<String, NoParameterMethods> temp : stringNoParameterMethodMap.entrySet()) {
+            if (temp.getKey().equals(message[0])) {
+                temp.getValue().execute();
             }
         }
     }
@@ -93,12 +114,11 @@ public class Executor {
     }
 
     //i didn't really know what type incoming objects should be so i choose Object...
-    private void receiveSerializedObject() {
+    private void receiveSerializedObject(String data) {
         Gson gson = new Gson();
-        String string = Connection.receivePacketOfData();
         JsonParser jsonParser = new JsonParser();
-        System.out.println(string + " hehehehehe");
-        JsonArray jsonArray = jsonParser.parse(string).getAsJsonArray();
+        System.out.println(data + " hehehehehe");
+        JsonArray jsonArray = jsonParser.parse(data).getAsJsonArray();
         Type heh = new TypeToken<Object>() {
         }.getType();
         for (int i = 0; i < jsonArray.size(); i++) {
@@ -108,21 +128,21 @@ public class Executor {
     }
 
     private void clearVectorOnServer() {
-        someVector.removeAllElements();
-        System.out.println("Vector cleared");
+        /*someVector.removeAllElements();
+        System.out.println("Vector cleared");*/
     }
 
     private void clearVectorOnClient() {
-        Connection.sendPacketOfData(message);
+        //Connection.sendPacketOfData(message);
     }
 
     private void sizeOnServer() {
-        Connection.sendPacketOfData(String.valueOf(someVector.size()));
+        //Connection.sendPacketOfData(String.valueOf(someVector.size()));
     }
 
-    private void sizeOnClient() {
-        Connection.sendPacketOfData(message);
-        System.out.println("size on client: " + Connection.receivePacketOfData());
+    private void sizeOnClient(String data) {
+        /*Connection.sendPacketOfData(message);
+        System.out.println("size on client: " + Connection.receivePacketOfData());*/
     }
 
     private void requestObject() {
@@ -132,7 +152,7 @@ public class Executor {
     //type is used to give idea of what type object is going to be so client knows what constructor to use
     // in this situation. might as well get a better checking procedure.
     private void sendObject() {
-        Gson gson = new Gson();
+        /*Gson gson = new Gson();
         message = message.replaceAll("[^0-9]", "");
         String object = gson.toJson(someVector.get(Integer.valueOf(message)));
         String type;
@@ -145,18 +165,18 @@ public class Executor {
         System.out.println(type);
         Connection.sendPacketOfData(type);
         System.out.println(object);
-        Connection.sendPacketOfData(object);
+        Connection.sendPacketOfData(object);*/
 
     }
 
-    private void getObject() {
-        Gson gson = new Gson();
+    private void getObject(String data) {
+        /*Gson gson = new Gson();
 
         String object = Connection.receivePacketOfData();
         System.out.println(object);
         Type heh = new TypeToken<Object>() {
         }.getType();
-        someVector.add(gson.fromJson(object, heh));
+        someVector.add(gson.fromJson(object, heh));*/
 
     }
 }
