@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -72,9 +73,9 @@ public class Executor {
      * @throws NoSuchMethodException
      */
     private void setStringMethodMap() throws NoSuchMethodException {
-        String[] possibleNoParameterCommands = new String[]{"-sobjc", "-clrvc", "-vecss", "-gobjc"
+        String[] possibleNoParameterCommands = new String[]{"-sobjs", "-clrvc", "-vecss", "-gobjc"
                 , "-gobjs"};
-        String[] possibleParameterCommands = new String[]{"-sobjs", "-vecsc", "-rcobj"};
+        String[] possibleParameterCommands = new String[]{"-sobjc", "-vecsc", "-rcobj"};
         stringNoParameterMethodMap = new HashMap<>();
         for (int i = 0; i < possibleNoParameterCommands.length; i++) {
             stringNoParameterMethodMap.put(possibleNoParameterCommands[i], noParameterMethods[i]);
@@ -99,9 +100,10 @@ public class Executor {
     void executeMessageFromClient(String[] message) {
         this.message = message[0];
         message[0] = message[0].replaceAll("\\d", "");
-        for (Map.Entry<String, NoParameterMethods> temp : stringNoParameterMethodMap.entrySet()) {
+        System.out.println(message[0]);
+        for (Map.Entry<String, ParameterMethod> temp : stringParameterMethodMap.entrySet()) {
             if (temp.getKey().equals(message[0])) {
-                temp.getValue().execute();
+                temp.getValue().execute(message[1]);
             }
         }
     }
@@ -117,6 +119,7 @@ public class Executor {
     private void receiveSerializedObject(String data) {
         Gson gson = new Gson();
         JsonParser jsonParser = new JsonParser();
+        data = data.split("\0")[0];
         System.out.println(data + " hehehehehe");
         JsonArray jsonArray = jsonParser.parse(data).getAsJsonArray();
         Type heh = new TypeToken<Object>() {
@@ -125,6 +128,7 @@ public class Executor {
             System.out.println(jsonArray.get(i));
             someVector.add(gson.fromJson(jsonArray.get(i), heh));
         }
+        System.out.println(someVector.size());
     }
 
     private void clearVectorOnServer() {

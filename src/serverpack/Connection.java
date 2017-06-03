@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 class Connection {
     private static DatagramSocket socketInput;
@@ -28,7 +29,6 @@ class Connection {
             while (isConnected) {
                 String receivedData[] = receivePacketOfData();
                 System.out.println("YES SOMETHING HAPPEND");
-                System.out.println("received message: " + receivedData[1]);
                 executor.executeMessageFromClient(receivedData);
                 try {
                     Thread.sleep(10);
@@ -77,14 +77,15 @@ class Connection {
         try {
             socketInput.receive(packetOfData);
             command = new String(packetOfData.getData());
+            command = command.substring(0,6);
             System.out.println("command is " + command);
             while (true) {
-                bufferForData =  new byte[256];
+                bufferForData = new byte[256];
                 packetOfData = new DatagramPacket(bufferForData, bufferForData.length);
                 socketInput.receive(packetOfData);
                 String receivedData = new String(packetOfData.getData());
                 System.out.println("received " + receivedData);
-                if (receivedData.equalsIgnoreCase("end")) {
+                if (Objects.equals(receivedData.substring(0,3), "end")) {
                     System.out.println("ending");
                     break;
                 } else {
