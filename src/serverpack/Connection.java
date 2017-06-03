@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Objects;
 
 class Connection {
@@ -57,16 +58,71 @@ class Connection {
     }
 
 
-    static void sendPacketOfData(String data) {
-        System.out.println("sending: " + data);
+    static void sendPacketOfData(String command, String data) {
+        bufferForData =  command.getBytes();
+        packetOfData = new DatagramPacket(bufferForData,bufferForData.length,address,outputPortNumber);
+        try {
+            socketOutput.send(packetOfData);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         bufferForData = data.getBytes();
-        packetOfData = new DatagramPacket(bufferForData, bufferForData.length, address, outputPortNumber);
+        //System.out.println("sending this many bytes: " + bufferForData.length);
+        if (bufferForData.length > 256) {
+            int offset = 0;
+            while (offset < bufferForData.length) {
+                byte[] tempArray;
+                if (offset + 256 < bufferForData.length) {
+                    tempArray = Arrays.copyOfRange(bufferForData, offset, offset + 256);
+                    offset += 256;
+                } else {
+                    tempArray = Arrays.copyOfRange(bufferForData, offset, bufferForData.length);
+                    offset += 256;
+                }
+                System.out.println("sending " + new String(tempArray) );
+                packetOfData = new DatagramPacket(tempArray, tempArray.length, address, outputPortNumber);
+                try {
+                    socketOutput.send(packetOfData);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        } else {
+            packetOfData = new DatagramPacket(bufferForData, bufferForData.length, address, outputPortNumber);
+            System.out.println("sending " + new String(bufferForData));
+            try {
+                socketOutput.send(packetOfData);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        bufferForData = "end".getBytes();
+        packetOfData = new DatagramPacket(bufferForData,bufferForData.length,address,outputPortNumber);
         try {
             socketOutput.send(packetOfData);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+    static void sendPacketOfData(String command) {
+        bufferForData =  command.getBytes();
+        packetOfData = new DatagramPacket(bufferForData,bufferForData.length,address,outputPortNumber);
+        try {
+            socketOutput.send(packetOfData);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        bufferForData = "end".getBytes();
+        packetOfData = new DatagramPacket(bufferForData,bufferForData.length,address,outputPortNumber);
+        try {
+            socketOutput.send(packetOfData);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private static String[] receivePacketOfData() {
         packetOfData = new DatagramPacket(bufferForData, bufferForData.length);

@@ -2,6 +2,7 @@ package serverpack;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -73,9 +74,9 @@ public class Executor {
      * @throws NoSuchMethodException
      */
     private void setStringMethodMap() throws NoSuchMethodException {
-        String[] possibleNoParameterCommands = new String[]{"-sobjs", "-clrvc", "-vecss", "-gobjc"
+        String[] possibleNoParameterCommands = new String[]{"-sobjs", "-clrvc", "-vecss","-vecsc", "-gobjc"
                 , "-gobjs"};
-        String[] possibleParameterCommands = new String[]{"-sobjc", "-vecsc", "-rcobj"};
+        String[] possibleParameterCommands = new String[]{"-sobjc", "-", "-rcobj"};
         stringNoParameterMethodMap = new HashMap<>();
         for (int i = 0; i < possibleNoParameterCommands.length; i++) {
             stringNoParameterMethodMap.put(possibleNoParameterCommands[i], noParameterMethods[i]);
@@ -109,10 +110,9 @@ public class Executor {
     }
 
     private void sendSerializedObject() {
-        Connection.sendPacketOfData("-sobjs");
         Gson gson = new Gson();
         String temp = gson.toJson(someVector);
-        Connection.sendPacketOfData(temp);
+        Connection.sendPacketOfData(message,temp);
     }
 
     //i didn't really know what type incoming objects should be so i choose Object...
@@ -120,7 +120,7 @@ public class Executor {
         Gson gson = new Gson();
         JsonParser jsonParser = new JsonParser();
         data = data.split("\0")[0];
-        System.out.println(data + " hehehehehe");
+        System.out.println(data + "my json");
         JsonArray jsonArray = jsonParser.parse(data).getAsJsonArray();
         Type heh = new TypeToken<Object>() {
         }.getType();
@@ -132,21 +132,21 @@ public class Executor {
     }
 
     private void clearVectorOnServer() {
-        /*someVector.removeAllElements();
-        System.out.println("Vector cleared");*/
+        someVector.removeAllElements();
+        System.out.println("Vector cleared");
     }
 
     private void clearVectorOnClient() {
-        //Connection.sendPacketOfData(message);
+        Connection.sendPacketOfData(message);
     }
 
     private void sizeOnServer() {
-        //Connection.sendPacketOfData(String.valueOf(someVector.size()));
+        System.out.println(message + " " + String.valueOf(someVector.size()));
+        Connection.sendPacketOfData(message,String.valueOf(someVector.size()));
     }
 
     private void sizeOnClient(String data) {
-        /*Connection.sendPacketOfData(message);
-        System.out.println("size on client: " + Connection.receivePacketOfData());*/
+        System.out.println("size of client: " + data);
     }
 
     private void requestObject() {
@@ -156,7 +156,7 @@ public class Executor {
     //type is used to give idea of what type object is going to be so client knows what constructor to use
     // in this situation. might as well get a better checking procedure.
     private void sendObject() {
-        /*Gson gson = new Gson();
+        Gson gson = new Gson();
         message = message.replaceAll("[^0-9]", "");
         String object = gson.toJson(someVector.get(Integer.valueOf(message)));
         String type;
@@ -165,22 +165,19 @@ public class Executor {
         } else {
             type = "Strings";
         }
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("Type",type);
+        jsonObject.addProperty("Object",object);
         Connection.sendPacketOfData("-robj");
-        System.out.println(type);
-        Connection.sendPacketOfData(type);
-        System.out.println(object);
-        Connection.sendPacketOfData(object);*/
+        Connection.sendPacketOfData("-rcobj",gson.toJson(jsonObject));
 
     }
 
     private void getObject(String data) {
-        /*Gson gson = new Gson();
-
-        String object = Connection.receivePacketOfData();
-        System.out.println(object);
-        Type heh = new TypeToken<Object>() {
-        }.getType();
-        someVector.add(gson.fromJson(object, heh));*/
+        Gson gson = new Gson();
+        System.out.println(data);
+        Type heh = new TypeToken<Object>() {}.getType();
+        someVector.add(gson.fromJson(data, heh));
 
     }
 }
