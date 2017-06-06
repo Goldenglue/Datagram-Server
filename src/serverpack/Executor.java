@@ -23,6 +23,7 @@ public class Executor {
     private String message;
     private Vector<Object> someVector = new Vector<>();
 
+    @FunctionalInterface
     interface NoParameterMethods {
         void execute();
     }
@@ -36,6 +37,7 @@ public class Executor {
             this::sendObject
     };
 
+    @FunctionalInterface
     interface ParameterMethod {
         void execute(String something);
     }
@@ -59,9 +61,9 @@ public class Executor {
      * -dc - disconnect from server
      * -sobjc - cannot be executed directly from server, identifies that client sent object
      * -sobjs - send someVector to server in JSON format
-     * -clrc - cannot be executed directly from server,
+     * -clrvc - cannot be executed directly from server,
      * identifies that client requested to clear storage of objects on server
-     * -clrs - clears storage of objects on client
+     * -clrvs - clears storage of objects on client
      * -vecsc - cannot be executed directly from server,
      * identifies that client requested size of objects storage on server
      * -vecss -  requests size of objects storage on client
@@ -74,9 +76,9 @@ public class Executor {
      * @throws NoSuchMethodException
      */
     private void setStringMethodMap() throws NoSuchMethodException {
-        String[] possibleNoParameterCommands = new String[]{"-sobjs", "-clrvc", "-vecss","-vecsc", "-gobjc"
+        String[] possibleNoParameterCommands = new String[]{"-sobjs", "-clrvc","-clrvs", "-vecsc", "-gobjc"
                 , "-gobjs"};
-        String[] possibleParameterCommands = new String[]{"-sobjc", "-", "-rcobj"};
+        String[] possibleParameterCommands = new String[]{"-sobjc", "-vecss", "-rcobj"};
         stringNoParameterMethodMap = new HashMap<>();
         for (int i = 0; i < possibleNoParameterCommands.length; i++) {
             stringNoParameterMethodMap.put(possibleNoParameterCommands[i], noParameterMethods[i]);
@@ -88,23 +90,30 @@ public class Executor {
         }
     }
 
+
+
+    void executeMessageFromClient(String[] message) {
+        this.message = message[0];
+        message[0] = message[0].replaceAll("\\d", "");
+        System.out.println("executing command " + message[0]);
+        for (Map.Entry<String, ParameterMethod> temp : stringParameterMethodMap.entrySet()) {
+            if (temp.getKey().equals(message[0])) {
+                temp.getValue().execute(message[1]);
+            }
+        }
+        for (Map.Entry<String, NoParameterMethods> temp : stringNoParameterMethodMap.entrySet()) {
+            if (temp.getKey().equals(message[0])) {
+                temp.getValue().execute();
+            }
+        }
+    }
+
     void executeMessageFromClient(String message) {
         this.message = message;
         message = message.replaceAll("\\d", "");
         for (Map.Entry<String, NoParameterMethods> temp : stringNoParameterMethodMap.entrySet()) {
             if (temp.getKey().equals(message)) {
                 temp.getValue().execute();
-            }
-        }
-    }
-
-    void executeMessageFromClient(String[] message) {
-        this.message = message[0];
-        message[0] = message[0].replaceAll("\\d", "");
-        System.out.println(message[0]);
-        for (Map.Entry<String, ParameterMethod> temp : stringParameterMethodMap.entrySet()) {
-            if (temp.getKey().equals(message[0])) {
-                temp.getValue().execute(message[1]);
             }
         }
     }
@@ -141,7 +150,7 @@ public class Executor {
     }
 
     private void sizeOnServer() {
-        System.out.println(message + " " + String.valueOf(someVector.size()));
+        System.out.println("size on server is  " + String.valueOf(someVector.size()));
         Connection.sendPacketOfData(message,String.valueOf(someVector.size()));
     }
 

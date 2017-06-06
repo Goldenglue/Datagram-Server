@@ -29,7 +29,6 @@ class Connection {
         while (true) {
             while (isConnected) {
                 String receivedData[] = receivePacketOfData();
-                System.out.println("YES SOMETHING HAPPEND");
                 executor.executeMessageFromClient(receivedData);
                 try {
                     Thread.sleep(10);
@@ -59,7 +58,9 @@ class Connection {
 
 
     static void sendPacketOfData(String command, String data) {
+
         bufferForData =  command.getBytes();
+        System.out.println("sending command " + new String(bufferForData));
         packetOfData = new DatagramPacket(bufferForData,bufferForData.length,address,outputPortNumber);
         try {
             socketOutput.send(packetOfData);
@@ -67,7 +68,6 @@ class Connection {
             e.printStackTrace();
         }
         bufferForData = data.getBytes();
-        //System.out.println("sending this many bytes: " + bufferForData.length);
         if (bufferForData.length > 256) {
             int offset = 0;
             while (offset < bufferForData.length) {
@@ -108,6 +108,7 @@ class Connection {
 
     static void sendPacketOfData(String command) {
         bufferForData =  command.getBytes();
+        System.out.println("sending command " + new String(bufferForData));
         packetOfData = new DatagramPacket(bufferForData,bufferForData.length,address,outputPortNumber);
         try {
             socketOutput.send(packetOfData);
@@ -125,6 +126,7 @@ class Connection {
 
 
     private static String[] receivePacketOfData() {
+        bufferForData = new byte[256];
         packetOfData = new DatagramPacket(bufferForData, bufferForData.length);
         String[] everythingThatIsNeeded = new String[2];
         String whateverCame = null;
@@ -140,7 +142,7 @@ class Connection {
                 packetOfData = new DatagramPacket(bufferForData, bufferForData.length);
                 socketInput.receive(packetOfData);
                 String receivedData = new String(packetOfData.getData());
-                System.out.println("received " + receivedData);
+                System.out.println(receivedData);
                 if (Objects.equals(receivedData.substring(0,3), "end")) {
                     System.out.println("ending");
                     break;
